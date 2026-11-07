@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Minijuegos Retro - Ultimate</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --text: #ffffff;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 1rem 1rem 1rem;
+            max-width: 700px;
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 2rem;
+            color: #60a5fa;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+        }
+
+        #device-indicator {
+            background-color: #334155;
+            color: #38bdf8;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        /* Menú de selección */
+        .menu {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .menu-btn {
+            background-color: var(--card-bg);
+            color: var(--text);
+            border: 2px solid transparent;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .menu-btn:hover {
+            background-color: #334155;
+            border-color: var(--accent);
+        }
+
+        .menu-btn.active {
+            background-color: var(--accent);
+            border-color: #60a5fa;
+        }
+
+        /* Contenedor de Juegos */
+        .game-container {
+            display: none;
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 520px;
+        }
+
+        .game-container.active {
+            display: block;
+        }
+
+        /* Canvas de Juegos */
+        canvas {
+            border: 3px solid var(--accent);
+            background-color: #000000;
+            border-radius: 6px;
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+
+        #marioCanvas { background-color: #5c94fc; }
+        #snakeCanvas { background-color: #0f172a; }
+
+        /* Controles Táctiles Generales */
+        .touch-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .touch-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .touch-btn:active {
+            background-color: #2563eb;
+            transform: scale(0.95);
+        }
+
+        /* Panel direccional para Snake */
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(2, 50px);
+            gap: 5px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .d-btn {
+            background-color: #334155;
+            color: white;
+            border: none;
+            font-size: 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .d-btn:active { background-color: var(--accent); }
+
+        /* Tres en Raya */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 8px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+
+        .cell {
+            background-color: #0f172a;
+            border: 2px solid #334155;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            user-select: none;
+        }
+
+        /* Juego de Memoria */
+        .memory-board {
+            display: grid;
+            grid-template-columns: repeat(4, 70px);
+            grid-template-rows: repeat(4, 70px);
+            gap: 8px;
+            margin: 15px auto;
+            justify-content: center;
+        }
+        .memory-card {
+            background-color: #334155;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+            border: 2px solid #475569;
+        }
+        .memory-card.flipped {
+            background-color: #1e293b;
+            border-color: var(--accent);
+        }
+
+        /* Solitario Simplificado (Estilo Pila) */
+        .solitaire-area {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            min-height: 120px;
+        }
+        .sol-pile {
+            width: 70px;
+            height: 100px;
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background-color: #0f172a;
+            cursor: pointer;
+        }
+
+        /* Piedra, Papel o Tijera */
+        .rps-choices {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .rps-btn {
+            background-color: #0f172a;
+            border: 2px solid #334155;
+            padding: 10px 18px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .result-box {
+            font-size: 1.05rem;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .restart-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-top: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .restart-btn:hover { background-color: #dc2626; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Centro de Minijuegos</h1>
+        <p class="subtitle">Pong, 3 en Raya, PPT, Plataforma, Snake, Memoria y Solitario</p>
+        <div id="device-indicator">Detectando dispositivo...</div>
+
+        <div class="menu">
+            <button class="menu-btn active" onclick="switchGame('pong')">🏓 Pong</button>
+            <button class="menu-btn" onclick="switchGame('tictactoe')">❌ 3 Raya</button>
+            <button class="menu-btn" onclick="switchGame('rps')">✂️ PPT</button>
+            <button class="menu-btn" onclick="switchGame('mario')">🍄 Plataforma</button>
+            <button class="menu-btn" onclick="switchGame('snake')">🐍 Snake</button>
+            <button class="menu-btn" onclick="switchGame('memory')">🧠 Memoria</button>
+            <button class="menu-btn" onclick="switchGame('solitaire')">🃏 Solitario</button>
+        </div>
+    </header>
+
+    <!-- 1. PONG -->
+    <div id="pong-game" class="game-container active">
+        <h2>Pong Clásico</h2>
+        <canvas id="pongCanvas" width="460" height="260"></canvas>
+        <p id="pong-instructions" style="color:var(--text-muted); margin-top:10px; font-size:0.85rem;"></p>
+        <div class="touch-controls">
+            <button class="touch-btn" ontouchstart="movePlayer(-15)" onmousedown="movePlayer(-15)">⬆️ Arriba</button>
+            <button class="touch-btn" ontouchstart="movePlayer(15)" onmousedown="movePlayer(15)">⬇️ Abajo</button>
+        </div>
+    </div>
+
+    <!-- 2. TRES EN RAYA -->
+    <div id="tictactoe-game" class="game-container">
+        <h2>Tres en Raya</h2>
+        <div id="ttt-status" class="result-box">Turno del jugador: X</div>
+        <div class="board" id="ttt-board">
+            <div class="cell" onclick="makeMove(0)"></div><div class="cell" onclick="makeMove(1)"></div><div class="cell" onclick="makeMove(2)"></div>
+            <div class="cell" onclick="makeMove(3)"></div><div class="cell" onclick="makeMove(4)"></div><div class="cell" onclick="makeMove(5)"></div>
+            <div class="cell" onclick="makeMove(6)"></div><div class="cell" onclick="makeMove(7)"></div><div class="cell" onclick="makeMove(8)"></div>
+        </div>
+        <button class="restart-btn" onclick="resetTTT()">Reiniciar Juego</button>
+    </div>
+
+    <!-- 3. PIEDRA, PAPEL O TIJERA -->
+    <div id="rps-game" class="game-container">
+        <h2>Piedra, Papel o Tijera</h2>
+        <div class="rps-choices">
+            <button class="rps-btn" onclick="playRPS('Piedra')">✊ Piedra</button>
+            <button class="rps-btn" onclick="playRPS('Papel')">📄 Papel</button>
+            <button class="rps-btn" onclick="playRPS('Tijera')">✂️ Tijera</button>
+        </div>
+        <div id="rps-result" class="result-box">¡Haz una jugada!</div>
+        <button class="restart-btn" onclick="resetRPS()">Reiniciar Marcador</button>
+        <p id="rps-score" style="margin-top: 10px; color: var(--text-muted); font-size: 0.85rem;">Jugador: 0 | Computadora: 0</p>
+    </div>
+
+    <!-- 4. PLATAFORMA -->
+    <div id="mario-game" class="game-container">
+        <h2>Plataforma Retro</h2>
+        <canvas id="marioCanvas" width="460" height="260"></canvas>
+        <p style="color:var(--text-muted); margin-top:10px; font-size:0.85rem;">Usa Espacio o el botón para saltar:</p>
+        <div class="touch-controls">
+            <button class="touch-btn" style="background-color: #eab308; color:#000;" onclick="jumpMario()" ontouchstart="jumpMario()">⬆️ SALTAR</button>
+        </div>
+    </div>
+
+    <!-- 5. SNAKE -->
+    <div id="snake-game" class="game-container">
+        <h2>Juego de la Serpiente</h2>
+        <canvas id="snakeCanvas" width="280" height="280"></canvas>
+        <div id="snake-score" class="result-box">Puntuación: 0</div>
+        <div class="touch-controls" style="flex-direction: column; align-items: center;">
+            <button class="touch-btn" style="padding: 8px 20px;" onclick="changeSnakeDir('UP')">⬆️</button>
+            <div style="display: flex; gap: 30px;">
+                <button class="touch-btn" style="padding: 8px 20px;" onclick="changeSnakeDir('LEFT')">⬅️</button>
+                <button class="touch-btn" style="padding: 8px 20px;" onclick="changeSnakeDir('RIGHT')">➡️</button>
+            </div>
+            <button class="touch-btn" style="padding: 8px 20px;" onclick="changeSnakeDir('DOWN')">⬇️</button>
+        </div>
+        <button class="restart-btn" onclick="resetSnake()">Reiniciar Snake</button>
+    </div>
+
+    <!-- 6. JUEGO DE MEMORIA -->
+    <div id="memory-game" class="game-container">
+        <h2>Juego de Memoria</h2>
+        <div id="memory-status" class="result-box">Encuentra las parejas</div>
+        <div class="memory-board" id="memory-board"></div>
+        <button class="restart-btn" onclick="resetMemory()">Reiniciar Memoria</button>
+    </div>
+
+    <!-- 7. SOLITARIO SIMPLIFICADO -->
+    <div id="solitaire-game" class="game-container">
+        <h2>Mini Solitario</h2>
+        <p style="font-size: 0.85rem; color:var(--text-muted);">Organiza las cartas en orden descendente (As al Rey)</p>
+        <div class="solitaire-area" id="solitaire-board"></div>
+        <div id="sol-status" class="result-box">¡Toca las cartas para moverlas!</div>
+        <button class="restart-btn" onclick="resetSolitaire()">Nueva Partida</button>
+    </div>
+
+    <script>
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const indicator = document.getElementById('device-indicator');
+            const pongInst = document.getElementById('pong-instructions');
+            if (isMobileDevice) {
+                indicator.innerText = "📱 Modo Táctil Detectado";
+                pongInst.innerHTML = "Usa los botones táctiles para mover la paleta.";
+            } else {
+                indicator.innerText = "💻 Modo Computadora Detectado";
+                pongInst.innerHTML = "Usa las teclas <strong>W/S</strong> o los botones táctiles.";
+            }
+            initMemory();
+            initSolitaire();
+        });
+
+        let currentIntervals = {};
+        function switchGame(gameName) {
+            document.querySelectorAll('.game-container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+
+            Object.values(currentIntervals).forEach(clearInterval);
+            currentIntervals = {};
+
+            document.getElementById(`${gameName}-game`).classList.add('active');
+            event.target.classList.add('active');
+
+            if(gameName === 'pong') startPong();
+            if(gameName === 'mario') startMario();
+            if(gameName === 'snake') startSnake();
+        }
+
+        // --- PONG ---
+        let pCanvas = document.getElementById("pongCanvas"), pCtx = pCanvas.getContext("2d");
+        let ball = { x: 230, y: 130, radius: 7, speed: 3.5, velocityX: 3.5, velocityY: 3.5 };
+        let player = { x: 10, y: 100, width: 10, height: 60, score: 0 };
+        let computer = { x: 440, y: 100, width: 10, height: 60, score: 0 };
+        let keys = {};
+        window.addEventListener("keydown", e => keys[e.key] = true);
+        window.addEventListener("keyup", e => keys[e.key] = false);
+
+        function movePlayer(amt) {
+            player.y += amt;
+            if (player.y < 0) player.y = 0;
+            if (player.y > pCanvas.height - player.height) player.y = pCanvas.height - player.height;
+        }
+
+        function startPong() {
+            if (currentIntervals.pong) return;
+            currentIntervals.pong = setInterval(() => {
+                if ((keys["w"] || keys["W"]) && player.y > 0) player.y -= 5;
+                if ((keys["s"] || keys["S"]) && player.y < pCanvas.height - player.height) player.y += 5;
+                computer.y += (ball.y - (computer.y + computer.height / 2)) * 0.07;
+                ball.x += ball.velocityX; ball.y += ball.velocityY;
+                if (ball.y - ball.radius < 0 || ball.y + ball.radius > pCanvas.height) ball.velocityY = -ball.velocityY;
+                let active = (ball.x < pCanvas.width / 2) ? player : computer;
+                if (ball.x - ball.radius < active.x + active.width && ball.x + ball.radius > active.x && ball.y > active.y && ball.y < active.y + active.height) {
+                    let collidePoint = ball.y - (active.y + active.height / 2);
+                    let angleRad = (Math.PI / 4) * (collidePoint / (active.height / 2));
+                    let direction = (ball.x < pCanvas.width / 2) ? 1 : -1;
+                    ball.velocityX = direction * ball.speed * Math.cos(angleRad);
+                    ball.velocityY = ball.speed * Math.sin(angleRad);
+                    ball.speed += 0.1;
+                }
+                if (ball.x < 0) { computer.score++; resetBall(); }
+                else if (ball.x > pCanvas.width) { player.score++; resetBall(); }
+
+                pCtx.fillStyle = "#000"; pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+                pCtx.fillStyle = "#38bdf8"; pCtx.font = "22px Inter";
+                pCtx.fillText(player.score, pCanvas.width / 4, 30);
+                pCtx.fillText(computer.score, 3 * pCanvas.width / 4, 30);
+                pCtx.fillStyle = "#fff";
+                pCtx.fillRect(player.x, player.y, player.width, player.height);
+                pCtx.fillRect(computer.x, computer.y, computer.width, computer.height);
+                pCtx.beginPath(); pCtx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2); pCtx.fill();
+            }, 1000 / 60);
+        }
+        function resetBall() { ball.x = pCanvas.width / 2; ball.y = pCanvas.height / 2; ball.velocityX = -ball.velocityX; ball.speed = 3.5; }
+
+        // --- TRES EN RAYA ---
+        let tttBoard = ["","","","","","","","",""], tttTurn = "X", tttActive = true;
+        function makeMove(i) {
+            if (tttBoard[i] === "" && tttActive) {
+                tttBoard[i] = tttTurn;
+                document.getElementsByClassName('cell')[i].innerText = tttTurn;
+                const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+                for (let w of wins) {
+                    let [a,b,c] = w;
+                    if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[a] === tttBoard[c]) {
+                        document.getElementById('ttt-status').innerText = `¡Ganador: ${tttBoard[a]}! 🎉`;
+                        tttActive = false; return;
+                    }
+                }
+                if (!tttBoard.includes("")) { document.getElementById('ttt-status').innerText = "¡Empate! 🤝"; tttActive = false; return; }
+                tttTurn = tttTurn === "X" ? "O" : "X";
+                document.getElementById('ttt-status').innerText = "Turno del jugador: " + tttTurn;
+            }
+        }
+        function resetTTT() {
+            tttBoard = ["","","","","","","","",""]; tttTurn = "X"; tttActive = true;
+            document.getElementById('ttt-status').innerText = "Turno del jugador: X";
+            for (let c of document.getElementsByClassName('cell')) c.innerText = "";
+        }
+
+        // --- PIEDRA, PAPEL O TIJERA ---
+        let rpsP = 0, rpsC = 0;
+        function playRPS(choice) {
+            const choices = ['Piedra', 'Papel', 'Tijera'];
+            const comp = choices[Math.floor(Math.random() * 3)];
+            let res = "";
+            if (choice === comp) res = `Empate 🤝 (${choice})`;
+            else if ((choice === 'Piedra' && comp === 'Tijera') || (choice === 'Papel' && comp === 'Piedra') || (choice === 'Tijera' && comp === 'Papel')) {
+                res = `¡Ganaste! 🎉 (${choice} vence a ${comp})`; rpsP++;
+            } else { res = `Perdiste 😢 (${comp} vence a ${choice})`; rpsC++; }
+            document.getElementById('rps-result').innerText = res;
+            document.getElementById('rps-score').innerText = `Jugador: ${rpsP} | Computadora: ${rpsC}`;
+        }
+        function resetRPS() { rpsP = 0; rpsC = 0; document.getElementById('rps-result').innerText = "¡Haz una jugada!"; document.getElementById('rps-score').innerText = "Jugador: 0 | Computadora: 0"; }
+
+        // --- PLATAFORMA ---
+        let mCanvas = document.getElementById("marioCanvas"), mCtx = mCanvas.getContext("2d");
+        let mario = { x: 50, y: 190, width: 26, height: 32, vy: 0, gravity: 0.6, jumpPower: -10, grounded: true };
+        let obstacle = { x: 460, y: 195, width: 22, height: 28, speed: 4 };
+        let mScore = 0, mOver = false;
+
+        window.addEventListener("keydown", e => { if (e.code === "Space") jumpMario(); });
+        function jumpMario() {
+            if (mario.grounded && !mOver) { mario.vy = mario.jumpPower; mario.grounded = false; }
+            else if (mOver) { mario.y = 190; mario.vy = 0; mario.grounded = true; obstacle.x = 460; obstacle.speed = 4; mScore = 0; mOver = false; }
+        }
+        function startMario() {
+            if (currentIntervals.mario) return;
+            currentIntervals.mario = setInterval(() => {
+                if (!mOver) {
+                    mario.vy += mario.gravity; mario.y += mario.vy;
+                    if (mario.y > 190) { mario.y = 190; mario.vy = 0; mario.grounded = true; }
+                    obstacle.x -= obstacle.speed;
+                    if (obstacle.x < -30) { obstacle.x = mCanvas.width + Math.random() * 80; mScore++; obstacle.speed += 0.1; }
+                    if (mario.x < obstacle.x + obstacle.width && mario.x + mario.width > obstacle.x && mario.y < obstacle.y + obstacle.height && mario.y + mario.height > obstacle.y) mOver = true;
+                }
+                mCtx.fillStyle = "#5c94fc"; mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
+                mCtx.fillStyle = "#c84c0c"; mCtx.fillRect(0, 222, mCanvas.width, 40);
+                mCtx.fillStyle = "#fff"; mCtx.font = "16px Inter"; mCtx.fillText("Puntos: " + mScore, 15, 25);
+                if (mOver) {
+                    mCtx.fillStyle = "rgba(0,0,0,0.7)"; mCtx.fillRect(0,0,mCanvas.width,mCanvas.height);
+                    mCtx.fillStyle = "#ff0000"; mCtx.font = "20px Inter"; mCtx.fillText("GAME OVER", 170, 120);
+                    mCtx.fillStyle = "#fff"; mCtx.font = "13px Inter"; mCtx.fillText("Toca Saltar para Reiniciar", 145, 150);
+                    return;
+                }
+                mCtx.fillStyle = "#e52521"; mCtx.fillRect(mario.x, mario.y, mario.width, mario.height);
+                mCtx.fillStyle = "#00a800"; mCtx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            }, 1000 / 60);
+        }
+
+        // --- SNAKE ---
+        let sCanvas = document.getElementById("snakeCanvas"), sCtx = sCanvas.getContext("2d");
+        let snake = [{x: 10, y: 10}], sFood = {x: 5, y: 5}, sDx = 1, sDy = 0, sScore = 0;
+        function changeSnakeDir(dir) {
+            if (dir === 'UP' && sDy === 0) { sDx = 0; sDy = -1; }
+            if (dir === 'DOWN' && sDy === 0) { sDx = 0; sDy = 1; }
+            if (dir === 'LEFT' && sDx === 0) { sDx = -1; sDy = 0; }
+            if (dir === 'RIGHT' && sDx === 0) { sDx = 1; sDy = 0; }
+        }
+        function startSnake() {
+            if (currentIntervals.snake) return;
+            currentIntervals.snake = setInterval(() => {
+                let head = {x: snake[0].x + sDx, y: snake[0].y + sDy};
+                if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20 || snake.some(p => p.x === head.x && p.y === head.y)) {
+                    resetSnake(); return;
+                }
+                snake.unshift(head);
+                if (head.x === sFood.x && head.y === sFood.y) {
+                    sScore++; document.getElementById('snake-score').innerText = "Puntuación: " + sScore;
+                    sFood = {x: Math.floor(Math.random() * 20), y: Math.floor(Math.random() * 20)};
+                } else { snake.pop(); }
+
+                sCtx.fillStyle = "#0f172a"; sCtx.fillRect(0, 0, sCanvas.width, sCanvas.height);
+                sCtx.fillStyle = "#ef4444"; sCtx.fillRect(sFood.x * 14, sFood.y * 14, 13, 13);
+                sCtx.fillStyle = "#38bdf8";
+                snake.forEach(p => sCtx.fillRect(p.x * 14, p.y * 14, 13, 13));
+            }, 120);
+        }
+        function resetSnake() {
+            snake = [{x: 10, y: 10}]; sDx = 1; sDy = 0; sScore = 0;
+            document.getElementById('snake-score').innerText = "Puntuación: 0";
+            sFood = {x: 5, y: 5};
+        }
+
+        // --- MEMORIA ---
+        let emojis = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍒', '🍍', '🥝'];
+        let memCards = [], flipped = [], matchedCount = 0;
+        function initMemory() {
+            memCards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+            let board = document.getElementById('memory-board');
+            board.innerHTML = "";
+            memCards.forEach((emoji, idx) => {
+                let card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.index = idx;
+                card.dataset.emoji = emoji;
+                card.innerText = "?";
+                card.onclick = () => flipCard(card, idx);
+                board.appendChild(card);
+            });
+        }
+        function flipCard(card, idx) {
+            if (flipped.length < 2 && !card.classList.contains('flipped') && !card.classList.contains('matched')) {
+                card.classList.add('flipped'); card.innerText = card.dataset.emoji;
+                flipped.push({card, emoji: card.dataset.emoji});
+                if (flipped.length === 2) {
+                    if (flipped[0].emoji === flipped[1].emoji) {
+                        flipped.forEach(f => f.card.classList.add('matched'));
+                        flipped = []; matchedCount++;
+                        if (matchedCount === emojis.length) document.getElementById('memory-status').innerText = "¡Ganaste el Memorama! 🎉";
+                    } else {
+                        setTimeout(() => {
+                            flipped.forEach(f => { f.card.classList.remove('flipped'); f.card.innerText = "?"; });
+                            flipped = [];
+                        }, 800);
+                    }
+                }
+            }
+        }
+        function resetMemory() { matchedCount = 0; flipped = []; document.getElementById('memory-status').innerText = "Encuentra las parejas"; initMemory(); }
+
+        // --- SOLITARIO SIMPLIFICADO ---
+        let solDeck = ['A♠', '2♠', '3♠', '4♠', '5♠'];
+        function initSolitaire() {
+            let board = document.getElementById('solitaire-board');
+            board.innerHTML = "";
+            let pile = document.createElement('div');
+            pile.className = 'sol-pile';
+            pile.innerText = solDeck[Math.floor(Math.random() * solDeck.length)];
+            pile.onclick = () => {
+                pile.innerText = solDeck[Math.floor(Math.random() * solDeck.length)];
+                document.getElementById('sol-status').innerText = "¡Carta cambiada!";
+            };
+            board.appendChild(pile);
+        }
+        function resetSolitaire() { document.getElementById('sol-status').innerText = "¡Toca las cartas para moverlas!"; initSolitaire(); }
+
+        startPong();
+    </script>
+</body>
+</html>
